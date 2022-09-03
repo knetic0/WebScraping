@@ -1,34 +1,45 @@
-from bs4 import BeautifulSoup
-import requests
+from selenium import webdriver
+import time
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
-while True:
+driver = webdriver.Chrome(executable_path=r"chromedriver")
+url = "https://www.bundle.app/gundem"
+driver.get(url)
+SCROLL_PAUSE_TIME = 0.5
 
-    refresh = input("Press F to refresh or Press Q to quit.")
+print(driver.title)
 
-    if refresh == "F" or refresh == "f":
+def Start():
+    last_height = driver.execute_script("return document.body.scrollHeight")
+    timer_loop = 0
+    try:
+        while True:
+            elements = WebDriverWait(driver, 5).until(
+                EC.presence_of_all_elements_located((By.CLASS_NAME, "nnewsSliderCardTitle"))
+            )
 
-        url = requests.get("https://crypto.com/price")
-        contentt = url.content
-        soup = BeautifulSoup(contentt, "lxml")
+            sources = WebDriverWait(driver, 5).until(
+                EC.presence_of_all_elements_located((By.CLASS_NAME, "newsSliderSource"))
+            )
+            time.sleep(2)
 
-        name = soup.find_all("td", {"class": "css-1sem0fc"})
-        price = soup.find_all("div", {"class": "css-b1ilzc"})
+            # scroll page
+            time.sleep(SCROLL_PAUSE_TIME)
+            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            new_height = driver.execute_script("return document.body.scrollHeight")
 
-        listeName = list()
-        listePrice = list()
+            if new_height == last_height or timer_loop == 9:
+                break
+            timer_loop = timer_loop + 1
+    finally:
+        timer = 0
+        for value in elements[3:]:   
+            if value.text: 
+                print(sources[timer].text, "\n", value.text, "\n")
+            timer += 1   
 
-        for i in range(0, len(name)):
-            name[i] = (name[i].text).strip("\n").strip()
-            listeName.append([name[i]])
+if __name__ == "__main__":
+    Start()
 
-        for j in range(0, len(price)):
-            price[j] = (price[j].text).strip("\n").strip()
-            listePrice.append([price[j]])
-
-        print("\tName\t\t\t", "Price")
-        print("------------------------------")
-        for i in range(len(listePrice)):
-            print(i + 1, "-)", (','.join(listeName[i])), "~", (','.join(listePrice[i])))
-
-    elif refresh == "Q" or refresh == "q":
-        break
